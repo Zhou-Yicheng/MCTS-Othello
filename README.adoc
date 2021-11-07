@@ -1,0 +1,182 @@
+= Project Reversed Reversi
+Zhou Yicheng <11810925@mail.sustech.edu.cn>
+2021-11-05
+:stem: latexmath
+
+Name: Zhou Yicheng ID: 11810925
+
+== Preliminary
+
+=== Problem Description
+
+Reversed Reversi is a relatively simple board game.
+Players take turns placing disks on the board with their assigned color facing up.
+During a play, any disk of the opponent's color that are in a straight line and bounded by the disk just placed and another discs of the current player's color are turned over to the current player's color.
+The object of the game is to have the fewest discs turned to display your color when the last playable empty square is filled.
+
+The goal of this project is to design and implement a competitive game search algorithm of Reversed Reversi.
+The search algorithm used in this project is Monte Carlo tree search (MCTS).
+The software used to develop this project is VS code.
+
+=== Problem Application
+
+MCTS is mainly applied in AI games research and normally used as benchmark to test and compare new algorithms.
+MCTS also has real world application such as planning, optimization and control systems.
+
+== Methodology
+
+=== Notation
+
+s:: state of the game
+
+a(s):: action applied to the state
+
+f(s, a):: next state of the game after the action is applied
+
+A(s):: available actions to the state
+
+v:: node of the Monte Carlo tree
+
+s(v):: corresponding state of the node
+
+Q(v):: reward value of the node
+
+N(v):: number of visited times of the node
+
+P(v):: parent node of the node
+
+UCT(v, c):: latexmath:[$\frac{Q(v)}{N(v)} + c\sqrt{\frac{\ln N(P(v))}{N(v)}}$]
+
+=== Data Structure
+
+State:: State of the game, including a chessboard and the color of player.
+
+Node:: Node of the Monte Carlo tree, including a state and Monte Carlo statistics.
+
+=== Model Design
+
+==== Game Model
+
+The game model is built following rules of the reference book.[1]
+
+. Initialize: Surround the given chessboard with empty places to prevent trivial bounds checking.
+
+. Search: Find all candidates which can flip at least one opponent's discs.
+
+. Play: Flip all possible opponent's discs vertically, horizontally, or diagonally.
+
+. Terminal: The board is completely filled or neither player has a legal move.
+
+==== MCTS Model
+
+Four steps are applied per search iteration to build a search tree: selection, expansion, simulation, backpropagation.[2]
+
+. Selection: Select the most promising child node recursively until a leaf node is selected according to the tree policy.  
+
+. Expansion: Expand the selected node one or more child nodes.
+
+. Simulation: Simulate one or more child nodes from the current state to the terminal state for one or more times according to the default policy.
+
+. Backpropagation: "Back up" the simulation result from the simulated node(s) to root node.
+
+Two policies are applied in this project:
+
+. Tree policy: This project use UCT policy as tree policy.
+
+. Default policy: Randomly make a choice in available actions.  
+
+=== Detail of Algorithm
+
+[source,subs="specialchars,quotes,replacements"]
+----
+*function* MCTS(s~0~)
+    create node v~0~ with state s~0~
+    *while* within time limit
+        v~l~ <- SELECT(v~0~)
+        EXPAND(v~l~)
+        for each child node v' of v~l~
+            &#916; <- SIMULATE(s(v'))
+            BACKUP(v', &#916;)
+    *return* a(BSETCHILD(v~0~, 0))
+
+*function* BSETCHILD(v, c)
+    *return* child node v' with max UCT(v', c)
+
+*function* SELECT(v)
+    *while* v is not leaf node
+        v <- BSETCHILD(v, C~p~)
+    *return* v
+
+*function* EXPAND(v)
+    *for* each action a in A(s(v))
+        add child node v' to v
+        s(v') <- f(s(v), a)
+        a(v') <- a
+
+*function* SIMULATE(s)
+    *while* s is not terminal state
+        a <- randomly choice in A(s)
+        s <- f(s, a)
+    *return* reward for state s
+
+*function* BACKUP(v, &#916;)
+    *while* v is not null
+        N(v) <- N(v) + 1
+        Q(v) <- &#916;
+        &#916; <- -&#916;
+        v <- P(v)
+----
+
+== Empirical Verification
+
+=== Dataset
+
+* 10 usability tests given by student assistants.
+
+* Play manually on the platform maintained by student assistants.
+
+* Other AI players on the platform, most of which are &#945;-&#946; players.
+
+=== Performance measure
+
+* The number of simulation performed in one second. The more simulation performed, the more reasonable of the action made.
+
+* Winning rate versus random player, which should be nearly 100%.
+
+* Rank on the platform where there are two hundred players.
+
+=== Hyperparameters
+
+* C~p~ = 1.414, approximately equal to asciimath:[sqrt(2)]
+
+* Number of expanded child nodes = number of all available actions, which is only one traditionally
+
+* Number of simulation for a state = 1
+
+=== Experimental results
+
+* 10 usability tests passed
+
+* Winning rate in the round robin: 74.26%
+
+* Rank in the round robin: 42
+
+=== Conclusion
+
+The experimental results show that MCTS is competitive but still weaker than hand-tuned minmax.
+The advantages of MCTS is that no domain-specific knowledge is needed except the game rules.
+Therefore, there is no need to adjust all kinds of parameters like minmax.
+MCTS can terminate and return the current best action anytime.
+The algorithm is easy to implement but difficult to improve.
+Lack of evaluation function, domain knowledge is difficult to be applied in MCTS.
+The only improvement made in this project is the number of child nodes to be expanded.
+Potential improvement including replacing the default policy for a ranking policy, performing more simulation for a state and using neural network to learn a better tree policy.
+
+
+== References
+
+1. B. Rose, Othello. Macmillan Education, 2005.
+
+2. C. B. Browne et al., "A Survey of Monte Carlo Tree Search Methods," in IEEE Transactions on Computational Intelligence and AI in Games, vol. 4, no. 1, pp. 1-43, March 2012, doi: 10.1109/TCIAIG.2012.2186810.
+
+3. G. Chaslot, S. Bakkes, I. Szita, en P. Spronck, “Monte-Carlo Tree Search: A New Framework for Game AI”, AIIDE, vol 8, bll 216–217, 2008.
